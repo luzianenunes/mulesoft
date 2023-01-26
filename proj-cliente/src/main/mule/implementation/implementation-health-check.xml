@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="implementation-health-check-main" doc:id="b34012ac-e551-4a36-a5ac-cef07ee31ce5" >
+		<flow-ref doc:name="Flow Reference" doc:id="212e2224-105a-4967-97cb-ef201d84b2e0" name="implementation-health-check-BD" target="StatusBD"/>
+		<ee:transform doc:name="Transform Message" doc:id="20976cec-0131-4bd9-97e9-9632f2f9f718" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    api_rest: {
+        nome: "API Cadastro Clientes",
+        status: "OK",
+       
+    },
+    banco_de_dados: {
+        nome: "Postgresql Heroku",
+        status: vars.StatusBD,
+      
+    }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="implementation-health-check-BD" doc:id="3b0ea07b-8069-4b8c-9cfd-eb06de2e0fee" >
+		<try doc:name="Try" doc:id="23345ea7-e5ac-470b-a54b-be21e8c486ae">
+			<db:select doc:name="Select Check" doc:id="c26eb20f-f1cf-4753-a45a-635f395e57b2" config-ref="Database_Config">
+				<db:sql><![CDATA[Select 0]]></db:sql>
+			</db:select>
+			<set-payload value="OK" doc:name="Status OK" doc:id="6df4a8fc-a58b-4370-befe-dc51fb7ae6ac" />
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="eb9e1a01-14b7-4005-aeef-9a2500b6f8a8">
+					<set-payload value='#["NOK" ++ error.description as String default error.errorMessage as String]' doc:name="Set NOK" doc:id="98465d32-d96e-45dd-85a6-8fe5d5e49d75" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</sub-flow>
+</mule>

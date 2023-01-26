@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="implemetation-salvar-usuario-main" doc:id="3d6a316b-c409-44df-a790-5cfd792223a8" >
+			<flow-ref doc:name="Flow Reference Client" doc:id="68163600-da29-4ec9-9689-52f9e9ebbdd0" name="implemetation-salvar-usuario-table-client"/>
+		<flow-ref doc:name="Flow Reference Address" doc:id="8e103498-5d70-4187-9745-d31ae55aec6b" name="implemetation-salvar-usuario-table-endereco"/>
+		<flow-ref doc:name="Flow Reference Phone" doc:id="b53e5f79-3b85-41ba-9b02-dfdc87cd610a" name="implemetation-salvar-usuario-table-telefone"/>
+		<ee:transform doc:name="Transform Message" doc:id="fd174fb8-1266-4ca1-b3d0-acdfc3b7ff55">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: "Cliente criado com sucesso.",
+    id_usuario: (vars.idClient default 0) as String
+}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    
+	</sub-flow>
+	<sub-flow name="implemetation-salvar-usuario-table-client" doc:id="8b1ec76b-1f8e-485b-8502-aac4f1a3e820" >
+		<ee:transform doc:name="Transform Message" doc:id="4515b813-92e9-4b61-a77d-a7d3277fa0ce">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	pNome: vars.inputPayload.nome ,
+	pSobrenome:  vars.inputPayload.sobrenome
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:insert doc:name="Insert" doc:id="5e9c9ba1-c754-454d-a86b-0c4d0e219796" config-ref="Database_Config" autoGenerateKeys="true">
+			<db:sql><![CDATA[INSERT INTO public.client(
+	name, lastname)
+VALUES (:pNome, :pSobrenome) RETURNING id_client;]]></db:sql>
+			<db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+			<db:auto-generated-keys-column-names>
+				<db:auto-generated-keys-column-name value="id_client" />
+			</db:auto-generated-keys-column-names>
+		</db:insert>
+		<set-variable value="#[payload.generatedKeys.id_client]" doc:name="Id Cliente" doc:id="c4eb1286-af0f-4b94-b609-8d02c1808c10" variableName="idClient"/>
+	</sub-flow>
+	<sub-flow name="implemetation-salvar-usuario-table-endereco" doc:id="f4e53242-479d-4d12-9f93-dce9d8ee696c" >
+		<ee:transform doc:name="Transform Message" doc:id="7e9b47d2-7064-4260-8878-a7f847b16cc2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var endereco= vars.inputPayload.endereco
+---
+{
+	pId_cliente: vars.idClient, 
+	pCep: endereco.cep default 0, 
+	pCidade: endereco.cidade default "", 
+	pEstado: endereco.estado default "", 
+	pRua: endereco.rua default ""	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:insert doc:name="Insert Adress" doc:id="3a52e380-d663-4fbb-a766-b132c265853f" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO public.address(
+	id_client, zip_code, city, uf, street)
+VALUES (:pId_cliente, :pCep, :pCidade, :pEstado, :pRua);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+	</sub-flow>
+	<sub-flow name="implemetation-salvar-usuario-table-telefone" doc:id="edd4ce9c-32df-4197-9a43-f0bd50221060" >
+		<ee:transform doc:name="Transform Message" doc:id="1a168ff0-48f1-439e-b6ea-14854067a2fb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var telefones= vars.inputPayload.telefones
+---
+
+telefones map({
+	pId_cliente: vars.idClient,
+    pNumero_telefone: ($.ddd as String default "") ++ ($.numero as String default "")
+})
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert" doc:id="5843e9e1-b783-4728-a59b-d2b1f697f8f4" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO public.phone(
+	id_client, phone_number)
+VALUES (:pId_cliente, :pNumero_telefone);]]></db:sql>
+		</db:bulk-insert>
+	</sub-flow>
+</mule>

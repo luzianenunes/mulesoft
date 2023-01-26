@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="5fb313c8-4598-470f-8eb1-057ec1400979" >
+		<db:generic-connection url="jdbc:postgresql://ec2-52-30-75-37.eu-west-1.compute.amazonaws.com:5432/dco23rl6ebsr29" driverClassName="org.postgresql.Driver" user="bywuoqomowqaiy" password="81699dd391febf0878386cbe793cb1ac059c2d2a0bc35212c61e8bee40197636" />
+	</db:config>
+	<api-gateway:autodiscovery apiId="18452642" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="d23926a2-9dcb-4f97-a69c-cd24885cc49c" flowRef="curso-mulesoft-cadastro-cliente-main" />
+</mule>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="implementation-get-usuario-main" doc:id="9050ff96-98ce-410c-b7eb-7325a7422903">
+        <db:select doc:name="Select" doc:id="9cf16405-5dbe-4d90-bbae-5d1a8cd172b4" config-ref="Database_Config">
+			<db:sql ><![CDATA[select 
+	   c.id_client,
+	   c.name,
+       c.lastname,
+	   a.zip_code,
+	   a.city,
+	   a.uf,
+	   a.street,
+	   p.phone_number
+from client c,
+     address a,
+	 phone p 
+where c.id_client = a.id_client 
+  and c.id_client = p.id_client
+  and c.id_client = :pId_cliente]]></db:sql>
+			<db:input-parameters ><![CDATA[#[pId_cliente: vars.id_cliente]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="0bd80f69-7f38-4e49-8e7f-0d70d0edb8c8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    nome: payload[0].name,
+    sobrenome: payload[0].lastname,
+    telefones: payload.phone_number map (
+        {
+            ddd: $[0 to 1] ,
+            numero: $[2 to (sizeOf($)-1)]
+        }
+    ),
+    endereco: {
+        cep:  payload[0].zip_code,
+        cidade:  payload[0].city,
+        estado:  payload[0].uf,        
+        rua:  payload[0].street    
+    }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" message="get:\client\(id):curso-mulesoft-cadastro-cliente-config" />
+   
+	</sub-flow>
+</mule>
